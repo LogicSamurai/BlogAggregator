@@ -33,6 +33,7 @@ func main() {
 	commands.Register("login",config.HandlerLogin)
 	commands.Register("register", config.HandlerRegister)
 	commands.Register("reset", config.HandlerReset)
+	commands.Register("users", config.HandlerUsers)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: myprogram <command> [args]")

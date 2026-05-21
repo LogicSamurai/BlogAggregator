@@ -115,6 +115,24 @@ func HandlerReset(s *State, cmd Command) error {
 	return nil
 }
 
+func HandlerUsers(s *State, cmd Command) error {
+	users, err := s.DB.GetUsers(context.Background())
+
+	if err != nil {
+		return err
+	}
+
+	for _, user := range users {
+		if user.Name == s.Config.CurrentUserName {
+			fmt.Println("* " + user.Name + " (current)")	
+		}else{
+			fmt.Println("* " + user.Name)
+		}
+	}
+
+	return nil
+}
+
 func write(cfg Config) error {
 	data, err := json.MarshalIndent(cfg, "", "    ")
 	if err != nil {
@@ -154,7 +172,7 @@ func Read() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	fmt.Println("File Content: ", string(fileContent))
+	// fmt.Println("File Content: ", string(fileContent))
 
 	cfg := Config{}
 	err = json.Unmarshal(fileContent, &cfg)
