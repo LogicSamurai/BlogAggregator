@@ -3,8 +3,12 @@ package config
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
+	"html"
+	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -31,6 +35,22 @@ type Command struct {
 
 type Commands struct {
 	Handlers map[string]func(*State, Command) error
+}
+
+type RSSFeed struct {
+	Channel struct {
+		Title       string    `xml:"title"`
+		Link        string    `xml:"link"`
+		Description string    `xml:"description"`
+		Item        []RSSItem `xml:"item"`
+	} `xml:"channel"`
+}
+
+type RSSItem struct {
+	Title       string `xml:"title"`
+	Link        string `xml:"link"`
+	Description string `xml:"description"`
+	PubDate     string `xml:"pubDate"`
 }
 
 func (c *Commands) Run(state *State, cmd Command) error {
@@ -124,12 +144,26 @@ func HandlerUsers(s *State, cmd Command) error {
 
 	for _, user := range users {
 		if user.Name == s.Config.CurrentUserName {
-			fmt.Println("* " + user.Name + " (current)")	
-		}else{
+			fmt.Println("* " + user.Name + " (current)")
+		} else {
 			fmt.Println("* " + user.Name)
 		}
 	}
 
+	return nil
+}
+
+func HandlerAgg(s *State, cmd Command) error {
+	if len(cmd.Args) != 0 {
+		return errors.New("agg command takes no arguments")
+	}
+
+	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%+v\n", feed)
 	return nil
 }
 
@@ -181,4 +215,41 @@ func Read() (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func fetchFeed(ctx context.Context, feedUrl string) (*RSSFeed, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, feedUrl, nil)
+	if err != nil {
+		return &RSSFeed{}, err
+	}
+
+	req.Header.Set("User-Agent", "gator")
+
+	client := http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return &RSSFeed{}, err
+	}
+	defer res.Body.Close()
+
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return &RSSFeed{}, err
+	}
+	
+	var feed RSSFeed
+	if err := xml.Unmarshal(data, &feed); err != nil {
+		return &RSSFeed{}, err
+	}
+
+	feed.Channel.Title = html.UnescapeString(feed.Channel.Title)
+	feed.Channel.Description = html.UnescapeString(feed.Channel.Description)
+
+	for i, item := range feed.Channel.Item {
+		feed.Channel.Item[i].Title = html.UnescapeString(item.Title)
+		feed.Channel.Item[i].Description = html.UnescapeString(item.Description)
+	}
+
+	return &feed, nil
 }

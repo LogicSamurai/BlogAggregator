@@ -34,6 +34,7 @@ func main() {
 	commands.Register("register", config.HandlerRegister)
 	commands.Register("reset", config.HandlerReset)
 	commands.Register("users", config.HandlerUsers)
+	commands.Register("agg", config.HandlerAgg)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: myprogram <command> [args]")
