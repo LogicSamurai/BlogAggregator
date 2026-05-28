@@ -35,6 +35,8 @@ func main() {
 	commands.Register("reset", config.HandlerReset)
 	commands.Register("users", config.HandlerUsers)
 	commands.Register("agg", config.HandlerAgg)
+	commands.Register("addfeed", config.HandlerAddFeed)
+	commands.Register("feeds", config.HandlerFeeds)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: myprogram <command> [args]")
@@ -54,13 +56,4 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
-
-
-	updatedRes, err := config.Read()
-	if err != nil {
-		fmt.Errorf("Error: %v", err)
-		os.Exit(1)
-	}
-	fmt.Println("Updated values received: ======== ",updatedRes)
-	
 }

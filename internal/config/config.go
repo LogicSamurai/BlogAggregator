@@ -167,6 +167,69 @@ func HandlerAgg(s *State, cmd Command) error {
 	return nil
 }
 
+func HandlerAddFeed(s *State, cmd Command) error {
+	if len(cmd.Args) != 2 {
+		return errors.New("Invalid Arguments")
+	} 
+
+	currentUserName := s.Config.CurrentUserName
+	currentUser, err := s.DB.GetUser(context.Background(), currentUserName)
+	if err != nil {
+		return fmt.Errorf("error getting current user: %w", err)
+	}
+
+	uid := uuid.New()
+	feedParams := database.CreateFeedParams{
+		ID:        uid,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      cmd.Args[0],
+		Url: 	   cmd.Args[1],
+		UserID:    currentUser.ID,
+	}
+
+	feed, err := s.DB.CreateFeed(context.Background(), feedParams)
+	if err != nil {
+		return err
+	}
+
+	//Feed DATA
+	fmt.Println("ID: ",feed.ID)
+	fmt.Println("CREATED AT: ", feed.CreatedAt)
+	fmt.Println("UPDATE AT: ", feed.UpdatedAt)
+	fmt.Println("NAME:", feed.Name)
+	fmt.Println("URL:", feed.Url)
+	fmt.Println("USER ID:", feed.UserID)
+
+	return nil
+}
+
+func HandlerFeeds(s *State, cmd Command) error {
+	if len(cmd.Args) != 0 {
+		return errors.New("Invalid Arguments")
+	}
+
+	feeds, err := s.DB.GetFeeds(context.Background())
+	if err != nil {
+		return err
+	}
+
+	//printing feeds to console
+	for _, feed := range feeds {
+		fmt.Println(feed.Name)
+		fmt.Println(feed.Url)
+		userName, err := s.DB.GetUserById(context.Background(),feed.UserID)
+		if err != nil {
+			return err
+		}
+		fmt.Println(userName.Name)
+	
+	}
+
+	return nil
+}
+
+
 func write(cfg Config) error {
 	data, err := json.MarshalIndent(cfg, "", "    ")
 	if err != nil {
