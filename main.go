@@ -37,6 +37,8 @@ func main() {
 	commands.Register("agg", config.HandlerAgg)
 	commands.Register("addfeed", config.HandlerAddFeed)
 	commands.Register("feeds", config.HandlerFeeds)
+	commands.Register("follow",config.HandlerFollow)
+	commands.Register("following", config.HandlerFollowing)
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: myprogram <command> [args]")

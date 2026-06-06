@@ -229,6 +229,65 @@ func HandlerFeeds(s *State, cmd Command) error {
 	return nil
 }
 
+func HandlerFollow(s *State, cmd Command) error{
+	if len(cmd.Args) != 1 {
+		return errors.New("Invalid Arguments")
+	}
+
+	uid := uuid.New()
+	feed, err := s.DB.GetFeedByUrl(context.Background(), cmd.Args[0])
+	if err != nil {
+		return err
+	}
+
+	currentUserName := s.Config.CurrentUserName
+	currentUser, err := s.DB.GetUser(context.Background(), currentUserName)
+	if err != nil {
+		return fmt.Errorf("error getting current user: %w", err)
+	}
+	
+	feedFollowParam := database.CreateFeedFollowParams{
+		ID: uid,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID: currentUser.ID,
+		FeedID: feed.ID,
+	}
+
+	feedFollow, err := s.DB.CreateFeedFollow(context.Background(), feedFollowParam)
+	if err != nil {
+		return err
+	}
+
+	if len(feedFollow) > 0 {
+		fmt.Println(feedFollow[0].FeedName, feedFollow[0].UserName)
+	}
+	return nil
+}
+
+func HandlerFollowing(s *State, cmd Command) error {
+	if len(cmd.Args) != 0 {
+		return errors.New("Invalid Arguments")
+	}
+
+	currentUserName := s.Config.CurrentUserName
+	currentUser, err := s.DB.GetUser(context.Background(), currentUserName)
+	if err != nil {
+		return fmt.Errorf("error getting current user: %w", err)
+	}
+
+	feedFollowOfUser, err := s.DB.GetFeedFollowsForUser(context.Background(), currentUser.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, val := range feedFollowOfUser {
+		fmt.Println(val.FeedName)
+	}
+
+	return nil
+}
+
 
 func write(cfg Config) error {
 	data, err := json.MarshalIndent(cfg, "", "    ")
