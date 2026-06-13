@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -10,10 +11,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/SyntaxSamurai/Bootdev/BlogAggregator/internal/database"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const configFileName = ".gatorconfig.json"
@@ -51,6 +54,9 @@ type RSSItem struct {
 	Link        string `xml:"link"`
 	Description string `xml:"description"`
 	PubDate     string `xml:"pubDate"`
+}
+
+type Post struct {
 }
 
 func (c *Commands) Run(state *State, cmd Command) error {
@@ -154,16 +160,26 @@ func HandlerUsers(s *State, cmd Command) error {
 }
 
 func HandlerAgg(s *State, cmd Command) error {
-	if len(cmd.Args) != 0 {
-		return errors.New("agg command takes no arguments")
+	if len(cmd.Args) != 1 {
+		return errors.New("agg command takes only 1 argument")
 	}
 
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	parsedTimeDuration, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%+v\n", feed)
+	ticker := time.NewTicker(parsedTimeDuration)
+
+	for ; ; <-ticker.C {
+		fmt.Println("Collecting feeds every 1m0s")
+		// feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+		err := scrapeFeeds(s)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -236,6 +252,7 @@ func HandlerFeeds(s *State, cmd Command) error {
 			return err
 		}
 		fmt.Println(userName.Name)
+		fmt.Println(feed.UpdatedAt)
 
 	}
 
@@ -312,7 +329,7 @@ func HandlerUnFollow(s *State, cmd Command, user database.User) error {
 	}
 
 	deleteFeedFollowParams := database.DeleteFeedFollowByIdsParams{
-		UserID : user.ID,
+		UserID: user.ID,
 		FeedID: feed.ID,
 	}
 
@@ -324,6 +341,39 @@ func HandlerUnFollow(s *State, cmd Command, user database.User) error {
 	return nil
 }
 
+func HandlerBrowse(s *State, cmd Command, user database.User) error {
+	limit := 2
+	if len(cmd.Args) > 1 {
+		return errors.New("Invalid Arguments")
+	}
+
+	if len(cmd.Args) == 1 {
+		parsedLimit, err := strconv.Atoi(cmd.Args[0])
+		if err != nil {
+			return errors.New("Invalid Input Type: limit must be a number")
+		}
+		limit = parsedLimit
+	}
+
+	getPostsForUserParams := database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  int32(limit),
+	}
+
+	userPosts, err := s.DB.GetPostsForUser(context.Background(), getPostsForUserParams)
+	if err != nil {
+		return err
+	}
+
+	for _, post := range userPosts {
+		fmt.Println(post.Name)
+		fmt.Println(post.Description)
+		fmt.Println(post.Url)
+		fmt.Println(post.PublishedAt)
+	}
+
+	return nil
+}
 
 func write(cfg Config) error {
 	data, err := json.MarshalIndent(cfg, "", "    ")
@@ -421,4 +471,60 @@ func MiddlewareLoggedIn(handler func(s *State, cmd Command, user database.User) 
 
 		return handler(s, cmd, user)
 	}
+}
+
+func scrapeFeeds(s *State) error {
+	feed, err := s.DB.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return err
+	}
+
+	err = s.DB.MarkFeedFetched(context.Background(), feed.ID)
+	if err != nil {
+		return err
+	}
+
+	feedContent, err := fetchFeed(context.Background(), feed.Url)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range feedContent.Channel.Item {
+		fmt.Println("============================")
+		fmt.Println(item.Title)
+		fmt.Println(item.Description)
+		fmt.Println(item.Link)
+		fmt.Println(item.PubDate)
+		fmt.Println("============================")
+
+		publishedAt, err := time.Parse(time.RFC1123, item.PubDate)
+		if err != nil {
+			publishedAt = time.Now()
+		}
+
+		createPostParams := database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       sql.NullString{String: item.Title, Valid: item.Title != ""},
+			Url:         item.Link,
+			Description: sql.NullString{String: item.Description, Valid: item.Description != ""},
+			PublishedAt: publishedAt,
+			FeedID:      feed.ID,
+		}
+
+		err = s.DB.CreatePost(context.Background(), createPostParams)
+		if err != nil {
+			var pqErr *pq.Error
+			if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+				// URL already exists - skip this post
+				continue
+			}
+			fmt.Printf("Error creating post for URL %s: %v\n", item.Link, err)
+			continue
+		}
+
+	}
+
+	return nil
 }

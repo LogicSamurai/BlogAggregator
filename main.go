@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	
+
 	cfg, err := config.Read()
 	if err != nil {
 		fmt.Errorf("Error: %v", err)
@@ -24,22 +24,23 @@ func main() {
 
 	state := config.State{
 		Config: &cfg,
-		DB: dbQueries,
+		DB:     dbQueries,
 	}
 
 	commands := config.Commands{
-		Handlers: make(map[string] func(*config.State, config.Command) error),
+		Handlers: make(map[string]func(*config.State, config.Command) error),
 	}
-	commands.Register("login",config.HandlerLogin)
+	commands.Register("login", config.HandlerLogin)
 	commands.Register("register", config.HandlerRegister)
 	commands.Register("reset", config.HandlerReset)
 	commands.Register("users", config.HandlerUsers)
 	commands.Register("agg", config.HandlerAgg)
 	commands.Register("addfeed", config.MiddlewareLoggedIn(config.HandlerAddFeed))
 	commands.Register("feeds", config.HandlerFeeds)
-	commands.Register("follow",config.MiddlewareLoggedIn(config.HandlerFollow))
+	commands.Register("follow", config.MiddlewareLoggedIn(config.HandlerFollow))
 	commands.Register("following", config.MiddlewareLoggedIn(config.HandlerFollowing))
-	commands.Register("unfollow",config.MiddlewareLoggedIn(config.HandlerUnFollow))
+	commands.Register("unfollow", config.MiddlewareLoggedIn(config.HandlerUnFollow))
+	commands.Register("browse", config.MiddlewareLoggedIn(config.HandlerBrowse))
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: myprogram <command> [args]")
