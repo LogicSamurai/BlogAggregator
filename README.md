@@ -70,7 +70,11 @@ Then run the migrations:
 export DB_URL="postgres://postgres:postgres@localhost:5432/gator?sslmode=disable"
 
 # Run migrations to create all necessary tables
-goose postgres "$DB_URL" up sql/schema
+goose postgres "$DB_URL" up
+
+Example: 
+goose postgres "postgres://postgres:postgres@localhost:5433/gator" up
+
 ```
 
 The migration files will create the following tables:
