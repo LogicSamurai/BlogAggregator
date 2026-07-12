@@ -24,7 +24,7 @@ Before running Gator, ensure you have the following installed:
 To install the `gator` CLI tool globally on your system:
 
 ```bash
-go install github.com/SyntaxSamurai/BlogAggregator@latest
+go install github.com/LogicSamurai/BlogAggregator@latest
 ```
 
 This will compile the project and place the `gator` binary in your `$GOPATH/bin` directory (typically `~/go/bin/` or `/usr/local/go/bin/`).
@@ -39,7 +39,7 @@ export PATH=$PATH:$(go env GOPATH)/bin
 Alternatively, you can build the binary manually:
 
 ```bash
-git clone https://github.com/SyntaxSamurai/BlogAggregator.git
+git clone https://github.com/LogicSamurai/BlogAggregator.git
 cd BlogAggregator
 go build -o gator
 ```
