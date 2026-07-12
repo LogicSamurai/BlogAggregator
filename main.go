@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/SyntaxSamurai/Bootdev/BlogAggregator/internal/config"
-	"github.com/SyntaxSamurai/Bootdev/BlogAggregator/internal/database"
+	"github.com/LogicSamurai/BlogAggregator/internal/config"
+	"github.com/LogicSamurai/BlogAggregator/internal/database"
 	_ "github.com/lib/pq"
 )
 

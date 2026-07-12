@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/SyntaxSamurai/Bootdev/BlogAggregator/internal/database"
+	"github.com/LogicSamurai/BlogAggregator/internal/database"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
