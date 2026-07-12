@@ -19,29 +19,44 @@ Before running Gator, ensure you have the following installed:
 
 ## Installation
 
-### Install via Go Install
+### Option 1: Build from Source (Recommended for `gator` command)
 
-To install the `gator` CLI tool globally on your system:
-
-```bash
-go install github.com/LogicSamurai/BlogAggregator@latest
-```
-
-This will compile the project and place the `gator` binary in your `$GOPATH/bin` directory (typically `~/go/bin/` or `/usr/local/go/bin/`).
-
-**Note**: Make sure your `$GOPATH/bin` is in your `$PATH`:
-```bash
-export PATH=$PATH:$(go env GOPATH)/bin
-```
-
-### Build from Source
-
-Alternatively, you can build the binary manually:
+Building from source allows you to name the binary `gator` directly:
 
 ```bash
 git clone https://github.com/LogicSamurai/BlogAggregator.git
 cd BlogAggregator
 go build -o gator
+```
+
+Then you can use the `gator` command directly:
+```bash
+./gator register <username>
+```
+
+Or move it to your PATH:
+```bash
+mv gator $(go env GOPATH)/bin/
+```
+
+### Option 2: Install via Go Install
+
+When installing directly from GitHub, the binary will be named `BlogAggregator`:
+
+```bash
+go install github.com/LogicSamurai/BlogAggregator@latest
+```
+
+This will place the `BlogAggregator` binary in your `$GOPATH/bin` directory.
+
+**To use the `gator` command name instead**, create a symlink:
+```bash
+ln -s $(go env GOPATH)/bin/BlogAggregator $(go env GOPATH)/bin/gator
+```
+
+**Make sure your `$GOPATH/bin` is in your `$PATH`**:
+```bash
+export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
 ## Database Setup
